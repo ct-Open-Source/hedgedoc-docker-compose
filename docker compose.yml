@@ -1,0 +1,66 @@
+version: '3'
+services:
+  database:
+    image: postgres:13.4-alpine
+    environment:
+      # Ersetzen Sie Benutzername und Kennwort durch individuelle Zugangsdaten. Sie sind nur für die Datenbank, nicht das Webinterface.
+      - POSTGRES_USER=hedgedoc
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=hedgedoc
+    volumes:
+      # Pfad für die Datenbank
+      - /<IhrPfad>/hedgedoc/database:/var/lib/postgresql/data
+    restart: always
+  app:
+    # Prüfen Sie unter https://hedgedoc.org/latest-release welche Version aktuell ist und ersetzen Sie ggf. die Versionsnummer
+    image: quay.io/hedgedoc/hedgedoc:1.9.3
+    environment:
+      # Grundeinstellungen
+      ## Zeitzone
+      - TZ=Europe/Berlin
+      
+      ## Hier die oben eingestellten Datenbank-Zugangsdaten eintragen
+      - CMD_DB_URL=postgres://hedgedoc:password@database:5432/hedgedoc
+      
+      ## Tragen Sie hier die Domain ein, über die Sie auf das HedgeDoc zugreifen (auch, wenn die Domain über einen HTTP-Reverse-Proxy genutzt wird)
+      - CMD_DOMAIN=localhost
+      
+      ## Sorgt dafür, dass abweichende Ports (bspw. 3000) an die URL angehängt werden. Nicht notwendig bei 80/443.
+      - CMD_URL_ADDPORT=true
+      
+      ## Muss gesetzt werden, wenn TLS zum Einsatz kommt -- egal ob lokal oder per Reverse-Proxy.
+      - CMD_PROTOCOL_USESSL=false
+      
+      ## Port, auf dem HedgeDoc seinen Webserver startet
+      - CMD_PORT=3000
+      
+      #Login
+      ## Erlaubt/Verbietet Login per E-Mail
+      - CMD_EMAIL=true
+      
+      ## Erlaubt/Verbietet Registrierung per E-Mail
+      - CMD_ALLOW_EMAIL_REGISTER=true
+      ## Weitere Login-Methoden finden Sie unter https://docs.hedgedoc.org/configuration/#login-methods
+      
+      # Zugangsrechte      
+      ## Erlaubt/Verbietet unregistrierten Nutzern Notizen zu erstellen
+      - CMD_ALLOW_ANYMOUS=true
+      
+      ## Erlaubt/Verbietet unregistrierten Nutzern Notizen zu bearbeiten
+      - CMD_ALLOW_ANONYMOUS_EDITS=true
+      
+      ## Erlaubt/Verbietet statt zufälligen URLs frei wählbare, bspw. https://hedgedoc.example.de/quartalszahlen
+      - CMD_ALLOW_FREEURL=true
+      
+      ## Setzt das voreingestellte Rechteprofil, wenn eine neue Notiz erstellt wird: freely, editable, limited, locked, protected, private
+      - CMD_DEFAULT_PERMISSION=freely
+
+    volumes:
+      # Pfad für Uploads, bspw. Bilder.
+      - /<IhrPfad>/hedgedoc/uploads:/hedgedoc/public/uploads
+    ports:
+      # Passen Sie hier den Port an, wenn Sie ihn im Parameter "CMD_PORT" geändert haben
+      - "3000:3000"
+    restart: always
+    depends_on:
+      - database
